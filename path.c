@@ -1,30 +1,44 @@
 #include "shell.h"
+
 /**
- * _get_path - get variable PATH.
- * @env: enviromente local
- * Return: value of PATH.
- */
-
-char *_get_path(char **env)
+* append_path - adds path to command
+* @path: path of command
+* @command: user entered command
+*
+* Return: buffer containing command with path on success
+* NULL on failure
+*/
+char *append_path(char *path, char *command)
 {
-	size_t index = 0, var = 0, count = 5;
-	char *path = NULL;
+	char *buf;
+	size_t i = 0, j = 0;
 
-	for (index = 0; _strncmp(env[index], "PATH=", 5); index++)
-		;
-	if (env[index] == NULL)
+	if (command == 0)
+		command = "";
+
+	if (path == 0)
+		path = "";
+
+	buf = malloc(sizeof(char) * (_strlen(path) + _strlen(command) + 2));
+	if (!buf)
 		return (NULL);
 
-	for (count = 5; env[index][var]; var++, count++)
-		;
-	path = malloc(sizeof(char) * (count + 1));
+	while (path[i])
+	{
+		buf[i] = path[i];
+		i++;
+	}
 
-	if (path == NULL)
-		return (NULL);
-
-	for (var = 5, count = 0; env[index][var]; var++, count++)
-		path[count] = env[index][var];
-
-	path[count] = '\0';
-	return (path);
+	if (path[i - 1] != '/')
+	{
+		buf[i] = '/';
+		i++;
+	}
+	while (command[j])
+	{
+		buf[i + j] = command[j];
+		j++;
+	}
+	buf[i + j] = '\0';
+	return (buf);
 }
