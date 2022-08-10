@@ -1,51 +1,50 @@
 #include "shell.h"
 /**
- * main - Main arguments functions
- * @ac: Count of argumnents
- * @av: Arguments
- * @env: Environment
- * Return: _exit = 0.
- */
-int main(int ac, char **av, char **env)
+* main - carries out the read, execute then print output loop
+* @ac: argument count
+* @av: argument vector
+* @envp: environment vector
+*
+* Return: 0
+*/
+
+int main(int ac, char **av, char *envp[])
 {
-	int pathValue = 0, status = 0, is_path = 0;
-	char *line = NULL, /**ptr to inpt*/ **commands = NULL; /**tokenized commands*/
-	(void)ac;
-	while (1)/* loop until exit */
+	char *line = NULL, *pathcommand = NULL, *path = NULL;
+	size_t bufsize = 0;
+	ssize_t linesize = 0;
+	char **command = NULL, **paths = NULL;
+	(void)envp, (void)av;
+	if (ac < 1)
+		return (-1);
+	signal(SIGINT, handle_signal);
+	while (1)
 	{
-		errno = 0;
-		line = _getline_command();/** reads user input*/
-		if (line == NULL && errno == 0)
-			return (0);
-		if (line)
-		{
-			pathValue++;
-			commands = tokenize(line);/** tokenizes or parse user input*/
-			if (!commands)
-				free(line);
-			if (!_strcmp(commands[0], "env"))/**checks if user wrote env"*/
-				_getenv(env);
-			else
-			{
-				is_path = _values_path(&commands[0], env);/** tokenizes PATH*/
-				status = _fork_fun(commands, av, env, line, pathValue, is_path);
-					if (status == 200)
-					{
-						free(line);
-						return (0);
-					}
-				if (is_path == 0)
-					free(commands[0]);
-			}
-			free(commands); /*free up memory*/
-		}
+		free_buffers(command);
+		free_buffers(paths);
+		free(pathcommand);
+		prompt_user();
+		linesize = getline(&line, &bufsize, stdin);
+		if (linesize < 0)
+			break;
+		info.ln_count++;
+		if (line[linesize - 1] == '\n')
+			line[linesize - 1] = '\0';
+		command = tokenizer(line);
+		if (command == NULL || *command == NULL || **command == '\0')
+			continue;
+		if (checker(command, line))
+			continue;
+		path = find_path();
+		paths = tokenizer(path);
+		pathcommand = test_path(paths, command[0]);
+		if (!pathcommand)
+			perror(av[0]);
 		else
-		{
-			if (isatty(STDIN_FILENO))
-				write(STDOUT_FILENO, "\n", 1);/** Writes to standard output*/
-			exit(status);
-		}
-		free(line);
+			execution(pathcommand, command);
 	}
-	return (status);
+	if (linesize < 0 && flags.interactive)
+		write(STDERR_FILENO, "\n", 1);
+	free(line);
+	return (0);
 }
