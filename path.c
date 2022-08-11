@@ -1,86 +1,46 @@
 #include "shell.h"
-
 /**
- * is_cmd - determines if a file is an executable command
- * @info: the info struct
- * @path: path to the file
- *
- * Return: 1 if true, 0 otherwise
+ * _values_path - Separate the path in new strings.
+ * @arg: Command input of user.
+ * @env: Enviroment.
+ * Return: Pointer to strings.
  */
-int is_cmd(info_t *info, char *path)
+int _values_path(char **arg, char **env)
 {
-	struct stat st;
+	char *token = NULL, *path_rela = NULL, *path_absol = NULL;
+	size_t value_path, len;
+	struct stat stat_lineptr;
 
-	(void)info;
-	if (!path || stat(path, &st))
-		return (0);
-
-	if (st.st_mode & S_IFREG)
+	if (stat(*arg, &stat_lineptr) == 0)
+		return (-1);
+	path_rela = _get_path(env);/** gets the content of "PATH="*/
+	if (!path_rela)
+		return (-1);
+	token = strtok(path_rela, ":"); /**tokenizes the content of "PATH="*/
+	len = _strlen(*arg); /**gets length of arg*/
+	while (token)
 	{
-		return (1);
-	}
-	return (0);
-}
-
-/**
- * dup_chars - duplicates characters
- * @pathstr: the PATH string
- * @start: starting index
- * @stop: stopping index
- *
- * Return: pointer to new buffer
- */
-char *dup_chars(char *pathstr, int start, int stop)
-{
-	static char buf[1024];
-	int i = 0, k = 0;
-
-	for (k = 0, i = start; i < stop; i++)
-		if (pathstr[i] != ':')
-			buf[k++] = pathstr[i];
-	buf[k] = 0;
-	return (buf);
-}
-
-/**
- * find_path - finds this cmd in the PATH string
- * @info: the info struct
- * @pathstr: the PATH string
- * @cmd: the cmd to find
- *
- * Return: full path of cmd if found or NULL
- */
-char *find_path(info_t *info, char *pathstr, char *cmd)
-{
-	int i = 0, curr_pos = 0;
-	char *path;
-
-	if (!pathstr)
-		return (NULL);
-	if ((_strlen(cmd) > 2) && starts_with(cmd, "./"))
-	{
-		if (is_cmd(info, cmd))
-			return (cmd);
-	}
-	while (1)
-	{
-		if (!pathstr[i] || pathstr[i] == ':')
+		value_path = _strlen(token);
+		path_absol = malloc(sizeof(char) * (value_path + len + 2));
+		if (!path_absol)
 		{
-			path = dup_chars(pathstr, curr_pos, i);
-			if (!*path)
-				_strcat(path, cmd);
-			else
-			{
-				_strcat(path, "/");
-				_strcat(path, cmd);
-			}
-			if (is_cmd(info, path))
-				return (path);
-			if (!pathstr[i])
-				break;
-			curr_pos = i;
+			free(path_rela);
+			return (-1);
 		}
-		i++;
+		path_absol = strcpy(path_absol, token);
+		_strcat(path_absol, "/");
+		_strcat(path_absol, *arg);
+
+		if (stat(path_absol, &stat_lineptr) == 0)
+		{
+			*arg = path_absol;
+			free(path_rela);
+			return (0);
+		}
+		free(path_absol);
+		token = strtok(NULL, ":");
 	}
-	return (NULL);
+	token = '\0';
+	free(path_rela);
+	return (-1);
 }
