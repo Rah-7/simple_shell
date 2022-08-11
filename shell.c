@@ -8,6 +8,7 @@
  * Return: 0 on success, 1 on error
  */
 int main(int ac, char **av)
+	int main(int argc, char **argv, char **env)
 {
 	info_t info[] = { INFO_INIT };
 	int fd = 2;
